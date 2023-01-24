@@ -14,7 +14,9 @@ Nainstalovaný poppler pro práci s PDF dokumenty a přidaný do PATH variable n
 
 [ ] - Dodělat odstranění po konverzi
 [ ] - Načítat jen pdf soubory *.pdf
-[ ] - 
+[ ] - Načítání různých typů kódu v config.ini
 
+# Another one
 
- 
+[ ] - dodělat script smb02 kopirovani from \sken\...
+[ ] - kontrolor zálohy...
