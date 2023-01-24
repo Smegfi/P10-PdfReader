@@ -26,7 +26,7 @@ class Application:
                 print(f"Načteno: {f.name}")        
             #self.ConvertToImage()
         except:
-            print("Chyba při načítání PDF souborů, ukončuji program")
+            print("Chyba při načítání PDF souborů, ukončuji program")        
             quit()
 
     def ConvertToImage(self):
