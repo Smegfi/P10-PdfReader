@@ -12,9 +12,9 @@ Nainstalovaný poppler pro práci s PDF dokumenty a přidaný do PATH variable n
 
 # Dodělat
 
-[ ] - Dodělat odstranění po konverzi
-[ ] - Načítat jen pdf soubory *.pdf
-[ ] - Načítání různých typů kódu v config.ini
+[x] - Dodělat odstranění po konverzi
+[x] - Načítat jen pdf soubory *.pdf
+[x] - Načítání různých typů kódu v config.ini
 
 # Another one
 
