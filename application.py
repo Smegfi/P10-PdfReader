@@ -1,64 +1,71 @@
-import configparser
+import logging
 import os
 from pdf2image import convert_from_path
 from pyzbar.pyzbar import decode
 from pyzbar.pyzbar import ZBarSymbol
 import shutil
 
-# ----------------------------------------------------------------------------------
-def LoadConfiguration():
-    try:
-        cfg = configparser.ConfigParser()
-        cfg.read("config.ini", "UTF-8")
-        global _source 
-        _source = cfg["DEFAULT"]["SourcePath"]
-        global _destination
-        _destination = cfg["DEFAULT"]["DestinationPath"]
-        global _prefix
-        _prefix = cfg["DEFAULT"]["Prefix"]
-        global _bartype
-        _bartype = cfg["DEFAULT"]["BarcodeType"]
-    except:
-        print("Zkontroluj jestli je správně nastavená konfigurace! [soubor config.ini]")
-        quit()
-# ----------------------------------------------------------------------------------
 
-
-# ----------------------------------------------------------------------------------
-def ConvertToImage():
-    LoadConfiguration()
-    
-    files = os.scandir(_source)
-    for t in files:
-        if t.is_file() and t.name.endswith(".pdf"):            
-            print(f"{t.name} is {t.path}")
-            images = convert_from_path(t.path, last_page=3)
+def MoveFiles(skenPath: str, logs: logging, **paths: str):
+    files = os.scandir(skenPath)
+    index = 0
+    for f in files:
+        if f.is_file() and f.name.endswith(".pdf"):
+            index += 1
             try:
-                for d in decode(images[0], symbols=[DetectBarcodeType()]):
-                    name: str = d.data.decode("utf-8")
-                    new_path = f"{ _destination }\\{name}.pdf"
-                    if name.startswith(_prefix):
-                        print(f"{name} is of type: {d.type}")
-                        shutil.copyfile(t.path, new_path)
-                        os.remove(t.path)
+                shutil.copyfile(f.path, paths["ginis"] + f"\\{f.name}")
+                shutil.copyfile(f.path, paths["espis"] + f"\\{f.name}")
+                if not paths["backup"] == None and paths["backup"].count() <= 0:
+                    shutil.copyfile(f.path, paths["backup"] + f"\\{f.name}")
+                    logs.info(f"{f.name} byl přesunut")
             except:
-                print("error")
-# ----------------------------------------------------------------------------------
+                logs.error(f"{f.name} chyba při přesunu souboru")
+    if not index > 0:
+        logs.info("Nebyl nalezen žádný soubor k přesunutí")
+            
 
-# ----------------------------------------------------------------------------------
-def DetectBarcodeType():
-    if _bartype == "CODE128":
+def ConvertToImage(source: str, destination: str, barcodeType: str, prefix: str, logs: logging):    
+    files = os.scandir(source)
+    index = 0
+    for f in files:
+        if f.is_file() and f.name.endswith(".pdf"):
+            index += 1
+            images = convert_from_path(f.path, last_page=3)
+            try:
+                for i in images:
+                    codes = decode(i, symbols=[DetectBarcodeType(barcodeType)])
+                    
+                    if len(codes) <= 0:
+                        logs.error(f"{f.name} nebyl nalezen žádný čárový kód")
+
+                    for c in codes:
+                        name: str = c.data.decode("utf-8")                    
+                        if name.startswith(prefix):
+                            new_path = f"{ destination }\\{name}.pdf"
+                            shutil.copyfile(f.path, new_path)
+                            os.remove(f.path)                        
+                            logs.info(f"{f.name} byl načten čárový kód {name}")
+                        else:
+                            logs.error(f"{f.name} nebyl nalezen čárový kód typu {barcodeType}")
+            except:
+                raise Exception("Chyba při konvertování pdf")
+    if index == 0:
+        logs.info("No .pdf files found!")
+
+def DetectBarcodeType(type: str):
+    if type == "CODE128":
         return ZBarSymbol.CODE128
-    elif _bartype == "CODE39":
+    elif type == "CODE39":
         return ZBarSymbol.CODE39
-    elif _bartype == "CODE93":
+    elif type == "CODE93":
         return ZBarSymbol.CODE93
-    elif _bartype == "EAN8":
+    elif type == "EAN8":
         return ZBarSymbol.EAN8
-    elif _bartype == "EAN13":
+    elif type == "EAN13":
         return ZBarSymbol.EAN13
-    elif _bartype == "PDF417":
+    elif type == "PDF417":
         return ZBarSymbol.PDF417
-    else:
+    elif type == "QRCODE":
         return ZBarSymbol.QRCODE
-# ----------------------------------------------------------------------------------
+    elif type.count() <= 0:
+        raise Exception("[BarcodeType] nebyl nataven nebo není nalezen, prosím zkontroluj konfiguraci")
